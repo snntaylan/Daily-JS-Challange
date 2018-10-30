@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie-edge">
+	<title>Breakout Game </title>
+	<link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+<body>
+	<div>
+		<div class="startBtn">Start Game</div>
+		Score: <span class="score">0</span>
+		Live: <span class="lives">0</span>
+	</div>
+	<div class="container">
+		<div id="ball"></div>
+		<div class="paddle"></div>
+		<div class="gameover">Click Start Button</div>
+	</div>
+
+	<script>
+		var container = document.querySelector('.container');
+		var ball = document.querySelector('#ball');
+		var paddle = document.querySelector('.paddle');
+		var btnStart = document.querySelector('.startBtn');
+
+		var gameOver = true;
+		var gameInPlay = false;
+		var score = 0;
+		var lives = 5;
+		var animationRepaat;
+		var ballDirection = [5,5,5]; // speed of ball
+		var containerDimension = container.getBoundingClientRect();
+		//console.log(containerDimension);
+
+		btnStart.addEventListener('click', startGame);
+		document.addEventListener('keydown', function(e){
+			var key = e.keyCode;
+			e.preventDefault(); // cancel any event
+			if(key === 37) paddle.left = true;
+			else if(key === 39) paddle.right = true;
+			else if(key === 38 && !gameInPlay) gameInPlay = true;
+		});
+
+		document.addEventListener('keyup', function(e){
+			var key = e.keyCode;
+			e.preventDefault(); // cancel any event
+			if(key===37) paddle.left = false;
+			else if(key === 39) paddle.right = false;
+		});
+
+		function startGame(){
+			if(gameOver){
+			document.querySelector('.gameover').style.display = 'none';
+			ball.style.display = 'block';
+			lives = 5;
+			setupBricks(12);
+			lifeUpdater();
+			animationRepaat = requestAnimationFrame(update);
+			gameOver = false;
+			gameInPlay = false; 
+			// console.dir(paddle);
+		}
+
+		function setupBricks(num){
+		var row = {x:50, y:50};
+		for(var x = 0; x<num; x++){
+			brickMaker(row);
+			row.x += 100;
+			}
+		}
+
+		function brickMaker(row){
+			var div = document.createElement('div');
+			div.setAttribute('class', 'brick');
+			div.style.backgroundColor = 'red';
+			div.style.left = row.x + 'px';
+			container.appendChild(div);
+		}
+
+		function update(){
+			if(gameOver === false){
+				var paddleCurrent = paddle.offsetLeft;
+				if(paddle.left && paddleCurrent > 0){
+					paddleCurrent -= 5;
+				} else if(paddle.right && paddleCurrent < (containerDimension.width - paddle.offsetWidth)){
+					paddleCurrent += 5;
+				}
+				paddle.style.left = paddleCurrent + 'px';
+				// console.log(paddleCurrent);
+				if(!gameInPlay){
+					waitingOnPaddle();
+				} else {
+					ballMove();
+				}
+				animationRepeat = requestAnimationFrame(update);
+			}
+		}
+
+		function waitingOnPaddle(){
+			ball.style.top = (paddle.offsetTop - 22) + 'px';
+			ball.style.left = (paddle.offsetLeft + 70) + 'px';
+		}
+
+		function ballMove(){
+			var x = ball.offsetLeft;
+			var y = ball.offsetTop;
+			if(x > (containerDimension.width-20) || x < 0){
+				ballDirection[0] *= -1; // change direction the ball
+			}
+			if(y > (containerDimension.height-20) || y < 0){
+				if(y > (containerDimension.height-20)){
+					fallOffEdge();
+					return;
+				}
+				ballDirection[1] *= -1;
+			}
+			if(isCollide(ball, paddle)){
+				// collison
+				//console.log('HIT');
+
+				var nDirectory = ((x - paddle.offsetLeft) - (paddle.offsetWidth / 2))/10;
+				// console.log(nDirectory);
+				ballDirection[0] = nDirectory;
+				ballDirection[1] *= -1;
+			}
+
+			x += ballDirection[0]; // horizontal
+			y += ballDirection[1]; // vertical
+
+			// x++;
+			
+			ball.style.top = y + 'px';
+			ball.style.left = x + 'px';
+
+		}
+
+		function lifeUpdater(){
+			document.querySelector('.lives').innerText = lives;
+		}
+
+		function stopper(){
+			gameInPlay = false;
+			ballDirection[0,-5];
+			waitingOnPaddle();
+			window.cancelAnimationFrame(animationRepeat);
+		}
+
+		function fallOffEdge(){
+			lives--;
+		 	lifeUpdater();
+			stopper();
+		}
+
+		function isCollide(a,b){
+			var aRect = a.getBoundingClientRect();
+			var bRect = b.getBoundingClientRect();
+			// console.log(aRect);
+			// console.log(bRect);
+			//console.log('**********');
+			return(!(aRect.bottom < bRect.top || aRect.top > bRect.bottom || aRect.right < bRect.left || aRect.left > bRect.right));
+		}
+};
+	</script>
+</body>
+</html>
